@@ -1,0 +1,206 @@
+.modal-toolbar {
+  --background: #181b21;
+  --color: #f1f5f9;
+  border-bottom: 1px solid #272c35;
+  padding: 6px 4px;
+}
+
+.modal-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  color: #f1f5f9;
+}
+
+.close-btn {
+  --color: #94a3b8;
+}
+
+.modal-content {
+  --background: #121418;
+  --padding-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.15rem;
+
+  .custom-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 0.45rem;
+
+    .required {
+      color: #ef4444;
+    }
+
+    .label-icon {
+      font-size: 1rem;
+      color: #818cf8;
+    }
+  }
+
+  .input-wrapper {
+    background: #1c2027;
+    border: 1.5px solid #2d333e;
+    border-radius: 10px;
+    padding: 2px 12px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    &:focus-within {
+      border-color: #6366f1;
+      background: #222730;
+    }
+
+    &.has-error {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+  }
+
+  /* Color de texto siempre nítido y visible en modo oscuro */
+  .custom-input, .custom-textarea, .custom-select {
+    --padding-start: 0;
+    --padding-end: 0;
+    --color: #f8fafc !important;
+    color: #f8fafc !important;
+    --placeholder-color: #64748b !important;
+    --placeholder-opacity: 1;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .error-text {
+    color: #ef4444;
+    font-size: 0.78rem;
+    margin: 4px 0 0 2px;
+    font-weight: 500;
+  }
+}
+
+/* Sección de Foto Mate Oscura */
+.photo-section {
+  .upload-box {
+    border: 2px dashed #2d333e;
+    background: #1c2027;
+    border-radius: 12px;
+    padding: 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #6366f1;
+      background: #222730;
+    }
+
+    .upload-icon {
+      font-size: 2rem;
+      color: #818cf8;
+      margin-bottom: 6px;
+    }
+
+    .upload-text {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 2px;
+    }
+
+    .upload-subtext {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+  }
+
+  .preview-container {
+    position: relative;
+    border-radius: 12px;
+    background: #1c2027;
+    border: 1px solid #2d333e;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+
+    .preview-image {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+      border: 1px solid #2d333e;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+
+      ion-button {
+        --border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: none;
+        height: 32px;
+      }
+    }
+  }
+
+  .processing-text {
+    font-size: 0.8rem;
+    color: #818cf8;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+
+  .col {
+    flex: 1;
+  }
+}
+
+/* Footer con botones fijos oscuro */
+.modal-footer {
+  background: #181b21;
+  border-top: 1px solid #272c35;
+  padding: 10px 16px 16px;
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+
+    .cancel-btn {
+      flex: 1;
+      --border-radius: 10px;
+      --border-color: #333a46;
+      --color: #cbd5e1;
+      font-weight: 600;
+      text-transform: none;
+      height: 44px;
+    }
+
+    .save-btn {
+      flex: 2;
+      --background: #4f46e5;
+      --background-hover: #4338ca;
+      --border-radius: 10px;
+      font-weight: 600;
+      text-transform: none;
+      height: 44px;
+    }
+  }
+}

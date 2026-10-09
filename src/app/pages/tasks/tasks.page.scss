@@ -1,0 +1,634 @@
+.main-header {
+  border-bottom: 1px solid #272c35;
+
+  .header-toolbar {
+    --background: #111419;
+    padding: 6px 12px;
+  }
+
+  .toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+
+      .brand-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: -0.02em;
+        color: #f1f5f9;
+        line-height: 1.2;
+      }
+
+      .brand-status {
+        font-size: 0.68rem;
+        color: #38bdf8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+    }
+  }
+
+  /* Badge de Conexión En línea / Offline */
+  .connection-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-right: 6px;
+    border: 1px solid;
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    &.online {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+
+      .pulse-dot {
+        background: #10b981;
+        box-shadow: 0 0 6px #10b981;
+      }
+    }
+
+    &.offline {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+
+      .pulse-dot {
+        background: #f59e0b;
+      }
+    }
+  }
+
+  .sync-btn {
+    --color: #38bdf8;
+    position: relative;
+
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+
+    .pending-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 0.62rem;
+      padding: 2px 5px;
+      border-radius: 8px;
+    }
+  }
+
+  .settings-btn {
+    --color: #94a3b8;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tasks-content {
+  --background: #0d0f13;
+}
+
+.content-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 5rem;
+}
+
+/* Banners de Estado (Offline y Pendientes) */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+
+  ion-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .banner-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 0.84rem;
+    }
+    span {
+      font-size: 0.76rem;
+      opacity: 0.9;
+    }
+  }
+
+  &.offline-banner {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fde68a;
+
+    ion-icon {
+      color: #f59e0b;
+    }
+  }
+
+  &.pending-banner {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #bfdbfe;
+
+    ion-icon {
+      color: #60a5fa;
+    }
+  }
+}
+
+/* Tarjeta Dashboard Mate Oscuro */
+.dashboard-card {
+  background: #161920;
+  border-radius: 14px;
+  padding: 1.25rem;
+  color: #ffffff;
+  border: 1px solid #272c35;
+  margin-bottom: 1.25rem;
+
+  .greeting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+
+    .greeting-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+      color: #f8fafc;
+    }
+
+    .greeting-subtitle {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin: 0;
+    }
+
+    .progress-pill {
+      background: #0f1115;
+      padding: 6px 12px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid #272c35;
+
+      .percent-number {
+        display: block;
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #38bdf8;
+      }
+
+      .percent-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .progress-container {
+    margin-bottom: 1rem;
+
+    .custom-progress {
+      height: 6px;
+      border-radius: 4px;
+      --background: #272c35;
+      --progress-background: #10b981;
+    }
+  }
+
+  .metrics-grid {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: #0f1115;
+    border-radius: 10px;
+    padding: 10px 8px;
+    border: 1px solid #272c35;
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .metric-num {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #f8fafc;
+      }
+
+      .metric-text {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 2px;
+      }
+
+      &.pending .metric-num {
+        color: #fbbf24;
+      }
+
+      &.completed .metric-num {
+        color: #34d399;
+      }
+    }
+
+    .metric-divider {
+      width: 1px;
+      height: 24px;
+      background: #272c35;
+    }
+  }
+}
+
+/* Buscador Mate Oscuro */
+.search-section {
+  margin-bottom: 0.85rem;
+
+  .custom-searchbar {
+    --background: #161920;
+    --box-shadow: none;
+    --border-radius: 10px;
+    border: 1px solid #272c35;
+    border-radius: 10px;
+    padding: 0;
+    --placeholder-color: #64748b;
+    --color: #f8fafc;
+  }
+}
+
+/* Filtro Segmento Mate Oscuro */
+.filter-section {
+  margin-bottom: 0.85rem;
+
+  .status-segment {
+    background: #161920;
+    border: 1px solid #272c35;
+    border-radius: 10px;
+    padding: 3px;
+
+    ion-segment-button {
+      --indicator-color: #272c35;
+      --indicator-box-shadow: none;
+      --color: #94a3b8;
+      --color-checked: #f8fafc;
+      font-weight: 600;
+      font-size: 0.82rem;
+      min-height: 34px;
+      border-radius: 8px;
+    }
+  }
+}
+
+/* Chips de Categorías Mate Oscuro */
+.categories-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  ion-chip {
+    margin: 0;
+    background: #161920;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0 10px;
+    transition: all 0.2s ease;
+    border: 1px solid #272c35;
+
+    ion-icon {
+      font-size: 0.95rem;
+      color: inherit;
+    }
+
+    &.chip-active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+  }
+}
+
+/* Loading & Empty States */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  gap: 12px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: #161920;
+  border-radius: 14px;
+  border: 1.5px dashed #272c35;
+  margin-top: 0.5rem;
+
+  .empty-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: #1f242d;
+    color: #818cf8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .empty-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #f1f5f9;
+  }
+
+  .empty-subtitle {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    max-width: 320px;
+    margin: 0 auto 1.25rem;
+    line-height: 1.4;
+  }
+
+  .create-first-btn {
+    --background: #4f46e5;
+    --border-radius: 10px;
+    font-weight: 600;
+    text-transform: none;
+  }
+}
+
+/* Lista de Tareas Mate Oscuro */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 0.5rem;
+}
+
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  background: #161920;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #272c35;
+  transition: border-color 0.2s ease;
+  position: relative;
+
+  &:hover {
+    border-color: #3b4352;
+  }
+
+  &.completed {
+    opacity: 0.55;
+    background: #101217;
+  }
+
+  .check-col {
+    padding-top: 2px;
+    margin-right: 12px;
+
+    .custom-check-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 1.5rem;
+
+      &.checked {
+        color: #10b981;
+      }
+    }
+  }
+
+  .task-info {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+
+    .task-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      word-break: break-word;
+      display: block;
+      line-height: 1.35;
+
+      &.line-through {
+        text-decoration: line-through;
+        color: #64748b;
+      }
+    }
+
+    .task-desc {
+      font-size: 0.84rem;
+      color: #94a3b8;
+      margin: 4px 0 8px;
+      line-height: 1.4;
+      word-break: break-word;
+
+      &.line-through {
+        text-decoration: line-through;
+        color: #64748b;
+      }
+    }
+
+    .task-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+
+      .badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 7px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .priority-badge {
+        &.priority-alta {
+          background: rgba(239, 68, 68, 0.2);
+          color: #f87171;
+        }
+        &.priority-media {
+          background: rgba(245, 158, 11, 0.2);
+          color: #fbbf24;
+        }
+        &.priority-baja {
+          background: rgba(16, 185, 129, 0.2);
+          color: #34d399;
+        }
+      }
+
+      .category-badge {
+        background: #272c35;
+        color: #cbd5e1;
+      }
+
+      .meta-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-weight: 500;
+
+        ion-icon {
+          font-size: 0.85rem;
+        }
+      }
+
+      /* Badges de sincronización */
+      .sync-badge-synced {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .sync-badge-pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+    }
+  }
+
+  /* Foto cuadrada sin deformar */
+  .task-photo-square {
+    width: 68px;
+    height: 68px;
+    min-width: 68px;
+    min-height: 68px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #272c35;
+    background: #111419;
+    margin: 0 8px;
+    cursor: pointer;
+    align-self: center;
+    flex-shrink: 0;
+
+    .square-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 9px;
+    }
+  }
+
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+
+    .action-btn {
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+
+      &.edit {
+        color: #94a3b8;
+        &:hover {
+          background: #272c35;
+          color: #818cf8;
+        }
+      }
+
+      &.delete {
+        color: #94a3b8;
+        &:hover {
+          background: rgba(239, 68, 68, 0.2);
+          color: #f87171;
+        }
+      }
+    }
+  }
+}
+
+/* FAB Mate */
+.custom-fab {
+  --background: #4f46e5;
+  --background-hover: #4338ca;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  font-size: 1.35rem;
+}

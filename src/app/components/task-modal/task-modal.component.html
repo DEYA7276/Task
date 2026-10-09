@@ -1,0 +1,166 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="modal-toolbar">
+    <ion-title class="modal-title">
+      {{ isEditMode ? 'Editar Tarea' : 'Nueva Tarea' }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()" class="close-btn" aria-label="Cerrar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding modal-content">
+  <form (ngSubmit)="save()" #taskForm="ngForm" id="taskForm">
+    
+    <!-- Campo Título -->
+    <div class="form-group">
+      <ion-label class="custom-label">Título de la Tarea <span class="required">*</span></ion-label>
+      <div class="input-wrapper" [class.has-error]="submitted && (!title || !title.trim())">
+        <ion-input
+          type="text"
+          name="title"
+          [(ngModel)]="title"
+          placeholder="Ej: Terminar entrega de proyecto Firebase"
+          required
+          autofocus="true"
+          class="custom-input"
+        ></ion-input>
+      </div>
+      @if (submitted && (!title || !title.trim())) {
+        <p class="error-text">El título de la tarea es obligatorio.</p>
+      }
+    </div>
+
+    <!-- Campo Descripción -->
+    <div class="form-group">
+      <ion-label class="custom-label">Descripción o Notas</ion-label>
+      <div class="input-wrapper">
+        <ion-textarea
+          name="description"
+          [(ngModel)]="description"
+          placeholder="Agrega detalles, enlaces o instrucciones para esta tarea..."
+          [autoGrow]="true"
+          rows="3"
+          class="custom-textarea"
+        ></ion-textarea>
+      </div>
+    </div>
+
+    <!-- Sección de Foto de la Tarea -->
+    <div class="form-group photo-section">
+      <ion-label class="custom-label">
+        <ion-icon name="camera-outline" class="label-icon"></ion-icon> Foto de la Tarea (Opcional)
+      </ion-label>
+
+      <!-- Input de archivo oculto -->
+      <input
+        #fileInput
+        type="file"
+        accept="image/*"
+        (change)="onFileSelected($event)"
+        style="display: none;"
+      />
+
+      @if (!imageUrl) {
+        <div class="upload-box" (click)="fileInput.click()">
+          <ion-icon name="cloud-upload-outline" class="upload-icon"></ion-icon>
+          <span class="upload-text">Tocar para tomar o seleccionar foto</span>
+          <span class="upload-subtext">JPG, PNG (se optimiza automáticamente)</span>
+        </div>
+      } @else {
+        <div class="preview-container">
+          <img [src]="imageUrl" alt="Foto de la tarea" class="preview-image" />
+          <div class="preview-actions">
+            <ion-button size="small" fill="outline" color="light" (click)="fileInput.click()">
+              <ion-icon slot="start" name="camera-outline"></ion-icon>
+              Cambiar foto
+            </ion-button>
+            <ion-button size="small" fill="solid" color="danger" (click)="removeImage()">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              Eliminar
+            </ion-button>
+          </div>
+        </div>
+      }
+
+      @if (isProcessingImage) {
+        <p class="processing-text">Procesando y optimizando imagen...</p>
+      }
+    </div>
+
+    <!-- Fila de Categoría y Prioridad (Sin emojis, solo texto limpio) -->
+    <div class="form-row">
+      <!-- Selector de Prioridad -->
+      <div class="form-group col">
+        <ion-label class="custom-label">
+          <ion-icon name="flag-outline" class="label-icon"></ion-icon> Prioridad
+        </ion-label>
+        <div class="input-wrapper select-wrapper">
+          <ion-select
+            name="priority"
+            [(ngModel)]="priority"
+            interface="popover"
+            placeholder="Selecciona prioridad"
+            class="custom-select"
+          >
+            <ion-select-option value="baja">Baja</ion-select-option>
+            <ion-select-option value="media">Media</ion-select-option>
+            <ion-select-option value="alta">Alta</ion-select-option>
+          </ion-select>
+        </div>
+      </div>
+
+      <!-- Selector de Categoría -->
+      <div class="form-group col">
+        <ion-label class="custom-label">
+          <ion-icon name="folder-outline" class="label-icon"></ion-icon> Categoría
+        </ion-label>
+        <div class="input-wrapper select-wrapper">
+          <ion-select
+            name="category"
+            [(ngModel)]="category"
+            interface="popover"
+            placeholder="Selecciona categoría"
+            class="custom-select"
+          >
+            <ion-select-option value="personal">Personal</ion-select-option>
+            <ion-select-option value="trabajo">Trabajo</ion-select-option>
+            <ion-select-option value="estudio">Estudio</ion-select-option>
+            <ion-select-option value="otro">Otro</ion-select-option>
+          </ion-select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fecha Límite Opcional -->
+    <div class="form-group">
+      <ion-label class="custom-label">
+        <ion-icon name="calendar-outline" class="label-icon"></ion-icon> Fecha Límite (Opcional)
+      </ion-label>
+      <div class="input-wrapper">
+        <ion-input
+          type="date"
+          name="dueDate"
+          [(ngModel)]="dueDate"
+          class="custom-input"
+        ></ion-input>
+      </div>
+    </div>
+
+  </form>
+</ion-content>
+
+<!-- Botones fijos en el Footer para que NUNCA se pierdan al hacer scroll o agregar fotos -->
+<ion-footer class="modal-footer ion-no-border">
+  <div class="action-buttons">
+    <ion-button expand="block" fill="outline" color="medium" (click)="cancel()" class="cancel-btn">
+      Cancelar
+    </ion-button>
+    <ion-button expand="block" (click)="save()" class="save-btn" [disabled]="isProcessingImage">
+      <ion-icon slot="start" [name]="isEditMode ? 'checkmark-outline' : 'add-circle-outline'"></ion-icon>
+      {{ isEditMode ? 'Actualizar' : 'Guardar Tarea' }}
+    </ion-button>
+  </div>
+</ion-footer>

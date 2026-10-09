@@ -1,0 +1,109 @@
+<ion-content class="login-content" [fullscreen]="true">
+  <div class="background-decorations">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+  </div>
+
+  <div class="login-container">
+    <!-- Encabezado de la App -->
+    <header class="app-hero">
+      <div class="hero-icon-container">
+        <ion-icon name="server-outline" class="hero-icon"></ion-icon>
+        <span class="badge-dot"></span>
+      </div>
+      <h1 class="app-title">TaskDey</h1>
+      <p class="app-subtitle">SQLite Local &bull; Laravel REST API</p>
+    </header>
+
+    <!-- Tarjeta Principal de Autenticación -->
+    <ion-card class="auth-card">
+      <ion-card-content>
+        <!-- Segmento Iniciar Sesión / Registrarse -->
+        <ion-segment [value]="authMode" (ionChange)="onSegmentChange($event)" class="custom-segment">
+          <ion-segment-button value="login">
+            <ion-label>Iniciar Sesión</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="register">
+            <ion-label>Crear Cuenta</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <form (ngSubmit)="onSubmit()" class="auth-form">
+          <!-- Mensaje de Error si ocurre -->
+          @if (errorMessage) {
+            <div class="error-banner">
+              <ion-icon name="warning-outline"></ion-icon>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+
+          <!-- Nombre Completo (solo en registro) -->
+          @if (authMode === 'register') {
+            <div class="form-group animate-slide">
+              <ion-label class="input-label">Nombre Completo</ion-label>
+              <div class="input-field">
+                <ion-icon name="person-outline" class="field-icon"></ion-icon>
+                <ion-input type="text" name="displayName" [(ngModel)]="displayName" placeholder="Tu nombre"
+                  class="field-input"></ion-input>
+              </div>
+            </div>
+          }
+
+          <!-- Correo Electrónico -->
+          <div class="form-group">
+            <ion-label class="input-label">Correo Electrónico</ion-label>
+            <div class="input-field">
+              <ion-icon name="mail-outline" class="field-icon"></ion-icon>
+              <ion-input type="email" name="email" [(ngModel)]="email" placeholder="usuario@ejemplo.com" required
+                autocomplete="email" class="field-input"></ion-input>
+            </div>
+          </div>
+
+          <!-- Contraseña -->
+          <div class="form-group">
+            <ion-label class="input-label">Contraseña</ion-label>
+            <div class="input-field">
+              <ion-icon name="lock-closed-outline" class="field-icon"></ion-icon>
+              <ion-input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
+                placeholder="Mínimo 6 caracteres" required autocomplete="current-password"
+                class="field-input"></ion-input>
+              <button type="button" class="visibility-toggle" (click)="togglePasswordVisibility()"
+                aria-label="Alternar visibilidad de contraseña">
+                <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirmar Contraseña (solo en registro) -->
+          @if (authMode === 'register') {
+            <div class="form-group animate-slide">
+              <ion-label class="input-label">Confirmar Contraseña</ion-label>
+              <div class="input-field">
+                <ion-icon name="lock-closed-outline" class="field-icon"></ion-icon>
+                <ion-input [type]="showPassword ? 'text' : 'password'" name="confirmPassword"
+                  [(ngModel)]="confirmPassword" placeholder="Repite tu contraseña" required
+                  class="field-input"></ion-input>
+              </div>
+            </div>
+          }
+
+          <!-- Botón de Envío -->
+          <ion-button type="submit" expand="block" class="submit-button" [disabled]="isLoading">
+            @if (isLoading) {
+              <ion-spinner name="crescent" slot="start"></ion-spinner>
+              <span>{{ authMode === 'login' ? 'Iniciando sesión...' : 'Creando cuenta...' }}</span>
+            } @else {
+              <span>{{ authMode === 'login' ? 'Entrar a Mis Tareas' : 'Registrarme' }}</span>
+              <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+            }
+          </ion-button>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <div class="footer-note">
+      <span>Almacenamiento seguro offline-first con réplica en Laravel API</span>
+    </div>
+
+  </div>
+</ion-content>

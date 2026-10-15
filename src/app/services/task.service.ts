@@ -3,6 +3,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { SqliteService } from './sqlite.service';
 import { SyncService, SyncResult } from './sync.service';
 import { NetworkService } from './network.service';
+import { AuthService } from './auth.service';
 import { Task, TaskCategory, TaskPriority } from '../models/task.model';
 
 @Injectable({
@@ -25,10 +26,30 @@ export class TaskService {
     private sqliteService: SqliteService,
     private syncService: SyncService,
     private networkService: NetworkService,
+    private authService: AuthService,
     private ngZone: NgZone
   ) {
     this.isOnline$ = this.networkService.isOnline$;
     this.isSyncing$ = this.syncService.isSyncing$;
+
+    // Conectar el callback de sincronización completada para actualizar la interfaz
+    this.syncService.onSyncComplete = async () => {
+      await this.refreshTasks();
+    };
+
+    // Escuchar cambios de usuario activo para mostrar ÚNICAMENTE sus tareas
+    this.authService.currentUser$.subscribe(async (user) => {
+      if (user && user.id) {
+        await this.sqliteService.claimUnassignedTasks(user.id);
+        await this.refreshTasks();
+        if (this.networkService.isOnline) {
+          this.syncNow();
+        }
+      } else {
+        this.tasksSubject.next([]);
+        this.pendingCountSubject.next(0);
+      }
+    });
 
     this.initialize();
   }
@@ -36,34 +57,51 @@ export class TaskService {
   private async initialize() {
     this.loadingSubject.next(true);
     await this.sqliteService.init();
-    await this.refreshTasks();
-    this.loadingSubject.next(false);
 
-    // Si hay conexión al iniciar, intentar sincronizar con Laravel
-    if (this.networkService.isOnline) {
-      this.syncNow();
+    const currentUser = this.authService.currentUser;
+    if (currentUser && currentUser.id) {
+      await this.sqliteService.claimUnassignedTasks(currentUser.id);
+      await this.refreshTasks();
+      if (this.networkService.isOnline) {
+        this.syncNow();
+      }
+    } else {
+      this.tasksSubject.next([]);
+      this.pendingCountSubject.next(0);
     }
+
+    this.loadingSubject.next(false);
   }
 
   /**
-   * Refresca las tareas desde SQLite y actualiza el Subject
+   * Refresca las tareas desde SQLite/IndexedDB filtrando por el usuario autenticado
    */
   async refreshTasks(): Promise<void> {
     try {
-      const tasks = await this.sqliteService.getTasks();
-      const pendingList = await this.sqliteService.getPendingTasks();
+      const activeUserId = this.authService.currentUser?.id;
+      if (!activeUserId) {
+        this.ngZone.run(() => {
+          this.tasksSubject.next([]);
+          this.pendingCountSubject.next(0);
+        });
+        return;
+      }
+
+      const tasks = await this.sqliteService.getTasks(activeUserId);
+      const pendingList = await this.sqliteService.getPendingTasks(activeUserId);
 
       this.ngZone.run(() => {
         this.tasksSubject.next(tasks);
         this.pendingCountSubject.next(pendingList.length);
       });
     } catch (err) {
-      console.error('Error cargando tareas desde SQLite:', err);
+      console.error('Error cargando tareas desde SQLite local:', err);
     }
   }
 
   /**
-   * Agrega una nueva tarea: Guarda en SQLite primero y luego sincroniza si hay red
+   * Agrega una nueva tarea: Guarda en SQLite primero y luego sincroniza si el servidor Laravel está activo.
+   * Si el servidor Laravel está apagado, se guarda localmente sin errores ni bloqueos.
    */
   async addTask(taskData: {
     title: string;
@@ -73,11 +111,13 @@ export class TaskService {
     category?: TaskCategory;
     dueDate?: string;
   }): Promise<Task> {
+    const activeUserId = this.authService.currentUser?.id ?? null;
     const id = 'tsk_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const now = Date.now();
 
     const newTask: Task = {
       id,
+      user_id: activeUserId,
       server_id: null,
       title: taskData.title.trim(),
       description: taskData.description ? taskData.description.trim() : '',
@@ -91,20 +131,20 @@ export class TaskService {
       sync_status: 'pending_create'
     };
 
-    // 1. Guardar en SQLite local inmediatamente (Offline-first)
+    // 1. Guardar en SQLite local inmediatamente (Offline-first garantizado)
     await this.sqliteService.insertTask(newTask);
     await this.refreshTasks();
 
-    // 2. Si hay conexión a internet, sincronizar con Laravel en segundo plano
+    // 2. Si el servidor Laravel está encendido, sincronizar en segundo plano sin bloquear
     if (this.networkService.isOnline) {
-      this.syncNow();
+      this.syncNow().catch((e) => console.warn('Sync en segundo plano pospuesto:', e));
     }
 
     return newTask;
   }
 
   /**
-   * Modifica una tarea existente: Actualiza en SQLite y sincroniza si hay conexión
+   * Modifica una tarea existente: Actualiza en SQLite y sincroniza si el servidor está encendido
    */
   async updateTask(taskId: string, changes: Partial<Task>): Promise<void> {
     const current = this.tasksSubject.value.find((t) => t.id === taskId);
@@ -116,7 +156,6 @@ export class TaskService {
       title: changes.title !== undefined ? changes.title.trim() : current.title,
       description: changes.description !== undefined ? changes.description?.trim() : current.description,
       updatedAt: Date.now(),
-      // Si ya era pending_create, se mantiene pending_create; si estaba synced, pasa a pending_update
       sync_status: current.sync_status === 'pending_create' ? 'pending_create' : 'pending_update'
     };
 
@@ -124,9 +163,9 @@ export class TaskService {
     await this.sqliteService.updateTask(updatedTask);
     await this.refreshTasks();
 
-    // 2. Sincronizar en segundo plano si hay red
+    // 2. Sincronizar en segundo plano si el servidor responde
     if (this.networkService.isOnline) {
-      this.syncNow();
+      this.syncNow().catch((e) => console.warn('Sync en segundo plano pospuesto:', e));
     }
   }
 
@@ -140,16 +179,16 @@ export class TaskService {
   }
 
   /**
-   * Elimina una tarea: Marca o borra en SQLite y sincroniza si hay conexión
+   * Elimina una tarea: Marca o borra en SQLite y sincroniza si el servidor está encendido
    */
   async deleteTask(taskId: string): Promise<void> {
     // 1. Marcar o borrar en SQLite local inmediatamente
     await this.sqliteService.deleteTask(taskId);
     await this.refreshTasks();
 
-    // 2. Sincronizar eliminación con Laravel en segundo plano
+    // 2. Sincronizar eliminación con Laravel si el servidor está activo
     if (this.networkService.isOnline) {
-      this.syncNow();
+      this.syncNow().catch((e) => console.warn('Sync en segundo plano pospuesto:', e));
     }
   }
 

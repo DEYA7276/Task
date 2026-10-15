@@ -13,23 +13,16 @@
 
 <ion-content class="ion-padding modal-content">
   <form (ngSubmit)="save()" #taskForm="ngForm" id="taskForm">
-    
+
     <!-- Campo Título -->
     <div class="form-group">
       <ion-label class="custom-label">Título de la Tarea <span class="required">*</span></ion-label>
       <div class="input-wrapper" [class.has-error]="submitted && (!title || !title.trim())">
-        <ion-input
-          type="text"
-          name="title"
-          [(ngModel)]="title"
-          placeholder="Ej: Terminar entrega de proyecto Firebase"
-          required
-          autofocus="true"
-          class="custom-input"
-        ></ion-input>
+        <ion-input type="text" name="title" [(ngModel)]="title" placeholder="Titulo" required autofocus="true"
+          class="custom-input"></ion-input>
       </div>
       @if (submitted && (!title || !title.trim())) {
-        <p class="error-text">El título de la tarea es obligatorio.</p>
+      <p class="error-text">El título de la tarea es obligatorio.</p>
       }
     </div>
 
@@ -37,14 +30,9 @@
     <div class="form-group">
       <ion-label class="custom-label">Descripción o Notas</ion-label>
       <div class="input-wrapper">
-        <ion-textarea
-          name="description"
-          [(ngModel)]="description"
-          placeholder="Agrega detalles, enlaces o instrucciones para esta tarea..."
-          [autoGrow]="true"
-          rows="3"
-          class="custom-textarea"
-        ></ion-textarea>
+        <ion-textarea name="description" [(ngModel)]="description"
+          placeholder="Agrega detalles, enlaces o instrucciones para esta tarea..." [autoGrow]="true" rows="3"
+          class="custom-textarea"></ion-textarea>
       </div>
     </div>
 
@@ -55,38 +43,32 @@
       </ion-label>
 
       <!-- Input de archivo oculto -->
-      <input
-        #fileInput
-        type="file"
-        accept="image/*"
-        (change)="onFileSelected($event)"
-        style="display: none;"
-      />
+      <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
 
       @if (!imageUrl) {
-        <div class="upload-box" (click)="fileInput.click()">
-          <ion-icon name="cloud-upload-outline" class="upload-icon"></ion-icon>
-          <span class="upload-text">Tocar para tomar o seleccionar foto</span>
-          <span class="upload-subtext">JPG, PNG (se optimiza automáticamente)</span>
-        </div>
+      <div class="upload-box" (click)="fileInput.click()">
+        <ion-icon name="cloud-upload-outline" class="upload-icon"></ion-icon>
+        <span class="upload-text">Tocar para tomar o seleccionar foto</span>
+        <span class="upload-subtext">JPG, PNG</span>
+      </div>
       } @else {
-        <div class="preview-container">
-          <img [src]="imageUrl" alt="Foto de la tarea" class="preview-image" />
-          <div class="preview-actions">
-            <ion-button size="small" fill="outline" color="light" (click)="fileInput.click()">
-              <ion-icon slot="start" name="camera-outline"></ion-icon>
-              Cambiar foto
-            </ion-button>
-            <ion-button size="small" fill="solid" color="danger" (click)="removeImage()">
-              <ion-icon slot="start" name="trash-outline"></ion-icon>
-              Eliminar
-            </ion-button>
-          </div>
+      <div class="preview-container">
+        <img [src]="imageUrl" alt="Foto de la tarea" class="preview-image" />
+        <div class="preview-actions">
+          <ion-button size="small" fill="outline" color="light" (click)="fileInput.click()">
+            <ion-icon slot="start" name="camera-outline"></ion-icon>
+            Cambiar foto
+          </ion-button>
+          <ion-button size="small" fill="solid" color="danger" (click)="removeImage()">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+            Eliminar
+          </ion-button>
         </div>
+      </div>
       }
 
       @if (isProcessingImage) {
-        <p class="processing-text">Procesando y optimizando imagen...</p>
+      <p class="processing-text">Procesando y optimizando imagen...</p>
       }
     </div>
 
@@ -98,13 +80,8 @@
           <ion-icon name="flag-outline" class="label-icon"></ion-icon> Prioridad
         </ion-label>
         <div class="input-wrapper select-wrapper">
-          <ion-select
-            name="priority"
-            [(ngModel)]="priority"
-            interface="popover"
-            placeholder="Selecciona prioridad"
-            class="custom-select"
-          >
+          <ion-select name="priority" [(ngModel)]="priority" interface="popover" placeholder="Selecciona prioridad"
+            class="custom-select">
             <ion-select-option value="baja">Baja</ion-select-option>
             <ion-select-option value="media">Media</ion-select-option>
             <ion-select-option value="alta">Alta</ion-select-option>
@@ -118,13 +95,8 @@
           <ion-icon name="folder-outline" class="label-icon"></ion-icon> Categoría
         </ion-label>
         <div class="input-wrapper select-wrapper">
-          <ion-select
-            name="category"
-            [(ngModel)]="category"
-            interface="popover"
-            placeholder="Selecciona categoría"
-            class="custom-select"
-          >
+          <ion-select name="category" [(ngModel)]="category" interface="popover" placeholder="Selecciona categoría"
+            class="custom-select">
             <ion-select-option value="personal">Personal</ion-select-option>
             <ion-select-option value="trabajo">Trabajo</ion-select-option>
             <ion-select-option value="estudio">Estudio</ion-select-option>
@@ -140,12 +112,7 @@
         <ion-icon name="calendar-outline" class="label-icon"></ion-icon> Fecha Límite (Opcional)
       </ion-label>
       <div class="input-wrapper">
-        <ion-input
-          type="date"
-          name="dueDate"
-          [(ngModel)]="dueDate"
-          class="custom-input"
-        ></ion-input>
+        <ion-input type="date" name="dueDate" [(ngModel)]="dueDate" class="custom-input"></ion-input>
       </div>
     </div>
 

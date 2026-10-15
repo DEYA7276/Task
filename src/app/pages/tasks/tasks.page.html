@@ -13,22 +13,25 @@
 
     <!-- Indicador de Red y Botones de Acción -->
     <ion-buttons slot="end">
-      <!-- Badge de Estado de Conexión -->
-      <div class="connection-badge" [ngClass]="isOnline ? 'online' : 'offline'" [title]="isOnline ? 'Conectado a la red' : 'Sin conexión - Guardando en SQLite local'">
+      <!-- Badge de Estado de Conexión del Servidor Laravel -->
+      <div class="connection-badge" [ngClass]="isOnline ? 'online' : 'offline'"
+        [title]="isOnline ? 'Servidor Laravel encendido y respondiendo' : 'Servidor Laravel apagado - Guardando en local'">
         <span class="pulse-dot"></span>
-        <span class="connection-label">{{ isOnline ? 'En línea' : 'Offline' }}</span>
+        <span class="connection-label">{{ isOnline ? 'Servidor Activo' : 'Servidor Apagado' }}</span>
       </div>
 
       <!-- Botón de Sincronización Manual -->
-      <ion-button (click)="manualSync()" class="sync-btn" [disabled]="isSyncing" aria-label="Sincronizar con Laravel" title="Sincronizar con Laravel">
+      <ion-button (click)="manualSync()" class="sync-btn" [disabled]="isSyncing" aria-label="Sincronizar con Laravel"
+        title="Sincronizar con Laravel">
         <ion-icon slot="icon-only" name="refresh-outline" [class.spinning]="isSyncing"></ion-icon>
         @if (pendingCount > 0) {
-          <ion-badge color="danger" class="pending-badge">{{ pendingCount }}</ion-badge>
+        <ion-badge color="danger" class="pending-badge">{{ pendingCount }}</ion-badge>
         }
       </ion-button>
 
       <!-- Botón de Ajustes de API Laravel -->
-      <ion-button (click)="openApiSettings()" class="settings-btn" aria-label="Configurar API de Laravel" title="Configurar URL de Laravel">
+      <ion-button (click)="openApiSettings()" class="settings-btn" aria-label="Configurar API de Laravel"
+        title="Configurar URL de Laravel">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
 
@@ -51,24 +54,24 @@
 
     <!-- Banner Informativo de Modo Offline o Pendientes -->
     @if (!isOnline) {
-      <div class="status-banner offline-banner">
-        <ion-icon name="cloud-offline-outline"></ion-icon>
-        <div class="banner-text">
-          <strong>Modo Sin Conexión</strong>
-          <span>Tus tareas se están guardando en SQLite local. Al reconectar se enviarán a Laravel.</span>
-        </div>
+    <div class="status-banner offline-banner">
+      <ion-icon name="cloud-offline-outline"></ion-icon>
+      <div class="banner-text">
+        <strong>Servidor Laravel Apagado (Modo Local)</strong>
+        <span>Tus tareas se están guardando en local. En cuanto inicies el servidor de Laravel se sincronizarán automáticamente.</span>
       </div>
+    </div>
     } @else if (pendingCount > 0) {
-      <div class="status-banner pending-banner">
-        <ion-icon name="cloud-upload-outline"></ion-icon>
-        <div class="banner-text">
-          <strong>{{ pendingCount }} cambio(s) guardado(s) en SQLite</strong>
-          <span>Pendientes de sincronizar con el API de Laravel.</span>
-        </div>
-        <ion-button size="small" fill="outline" color="primary" (click)="manualSync()" [disabled]="isSyncing">
-          Sincronizar
-        </ion-button>
+    <div class="status-banner pending-banner">
+      <ion-icon name="cloud-upload-outline"></ion-icon>
+      <div class="banner-text">
+        <strong>{{ pendingCount }} cambio(s) guardado(s) en SQLite</strong>
+        <span>Pendientes de sincronizar con el API de Laravel.</span>
       </div>
+      <ion-button size="small" fill="outline" color="primary" (click)="manualSync()" [disabled]="isSyncing">
+        Sincronizar
+      </ion-button>
+    </div>
     }
 
     <!-- Tarjeta Resumen / Métricas -->
@@ -76,7 +79,7 @@
       <div class="greeting-row">
         <div>
           <h2 class="greeting-title">Panel de Tareas</h2>
-          <p class="greeting-subtitle">Almacenamiento SQLite local con réplica en Laravel</p>
+          <!-- <p class="greeting-subtitle">Almacenamiento SQLite local con réplica en Laravel</p> -->
         </div>
         <div class="progress-pill">
           <span class="percent-number">{{ (progressRatio * 100) | number:'1.0-0' }}%</span>
@@ -144,7 +147,7 @@
         <ion-label>Trabajo</ion-label>
       </ion-chip>
       <ion-chip [class.chip-active]="categoryFilter === 'estudio'" (click)="categoryFilter = 'estudio'">
-        <ion-icon name="sparkles-outline"></ion-icon>
+        <!-- <ion-icon name="sparkles-outline"></ion-icon>  -->
         <ion-label>Estudio</ion-label>
       </ion-chip>
       <ion-chip [class.chip-active]="categoryFilter === 'otro'" (click)="categoryFilter = 'otro'">
@@ -155,125 +158,127 @@
 
     <!-- Estado de Carga -->
     @if (isLoading) {
-      <div class="loading-state">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>Cargando tareas desde la base de datos SQLite...</p>
-      </div>
+    <div class="loading-state">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Cargando tareas desde la base de datos SQLite...</p>
+    </div>
     }
 
     <!-- Estado Vacío -->
     @if (!isLoading && filteredTasks.length === 0) {
-      <div class="empty-state">
-        <div class="empty-icon-circle">
-          @if (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') {
-            <ion-icon name="search-outline"></ion-icon>
-          } @else {
-            <ion-icon name="checkmark-circle-outline"></ion-icon>
-          }
-        </div>
-        <h3 class="empty-title">
-          {{ (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') ? 'Sin resultados para este filtro' : '¡No tienes tareas registradas!' }}
-        </h3>
-        <p class="empty-subtitle">
-          {{ (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') ? 'Prueba cambiando los filtros o la búsqueda.' : 'Crea tu primera tarea para guardarla en SQLite local.' }}
-        </p>
-        @if (!searchTerm && categoryFilter === 'todas' && statusFilter === 'todas') {
-          <ion-button (click)="openAddTaskModal()" color="primary" class="create-first-btn">
-            <ion-icon slot="start" name="add-outline"></ion-icon>
-            Agregar mi primera tarea
-          </ion-button>
+    <div class="empty-state">
+      <div class="empty-icon-circle">
+        @if (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') {
+        <ion-icon name="search-outline"></ion-icon>
+        } @else {
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
         }
       </div>
+      <h3 class="empty-title">
+        {{ (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') ? 'Sin resultados para este filtro' :
+        '¡No tienes tareas registradas!' }}
+      </h3>
+      <p class="empty-subtitle">
+        {{ (searchTerm || categoryFilter !== 'todas' || statusFilter !== 'todas') ? 'Prueba cambiando los filtros o la
+        búsqueda.' : 'Crea tu primera tarea para guardarla en SQLite local.' }}
+      </p>
+      @if (!searchTerm && categoryFilter === 'todas' && statusFilter === 'todas') {
+      <ion-button (click)="openAddTaskModal()" color="primary" class="create-first-btn">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Agregar mi primera tarea
+      </ion-button>
+      }
+    </div>
     }
 
     <!-- Lista de Tareas -->
     @if (!isLoading && filteredTasks.length > 0) {
-      <div class="tasks-list">
-        @for (task of filteredTasks; track task.id) {
-          <div class="task-card" [class.completed]="task.completed">
-            <!-- Checkbox de Completado -->
-            <div class="check-col" (click)="toggleTask(task, $event)">
-              <button type="button" class="custom-check-btn" [class.checked]="task.completed"
-                aria-label="Marcar como completada">
-                <ion-icon [name]="task.completed ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
-              </button>
-            </div>
+    <div class="tasks-list">
+      @for (task of filteredTasks; track task.id) {
+      <div class="task-card" [class.completed]="task.completed">
+        <!-- Checkbox de Completado -->
+        <div class="check-col" (click)="toggleTask(task, $event)">
+          <button type="button" class="custom-check-btn" [class.checked]="task.completed"
+            aria-label="Marcar como completada">
+            <ion-icon [name]="task.completed ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+          </button>
+        </div>
 
-            <!-- Contenido de la Tarea -->
-            <div class="task-info" (click)="openEditTaskModal(task)">
-              <div class="task-header-row">
-                <span class="task-title" [class.line-through]="task.completed">
-                  {{ task.title }}
-                </span>
-              </div>
+        <!-- Contenido de la Tarea -->
+        <div class="task-info" (click)="openEditTaskModal(task)">
+          <div class="task-header-row">
+            <span class="task-title" [class.line-through]="task.completed">
+              {{ task.title }}
+            </span>
+          </div>
 
-              @if (task.description) {
-                <p class="task-desc" [class.line-through]="task.completed">
-                  {{ task.description }}
-                </p>
-              }
+          @if (task.description) {
+          <p class="task-desc" [class.line-through]="task.completed">
+            {{ task.description }}
+          </p>
+          }
 
-              <!-- Metadatos de la Tarea -->
-              <div class="task-meta-row">
-                <!-- Prioridad -->
-                <span class="badge priority-badge" [ngClass]="'priority-' + task.priority">
-                  {{ task.priority | uppercase }}
-                </span>
+          <!-- Metadatos de la Tarea -->
+          <div class="task-meta-row">
+            <!-- Prioridad -->
+            <span class="badge priority-badge" [ngClass]="'priority-' + task.priority">
+              {{ task.priority | uppercase }}
+            </span>
 
-                <!-- Categoría -->
-                <span class="badge category-badge">
-                  {{ task.category }}
-                </span>
+            <!-- Categoría -->
+            <span class="badge category-badge">
+              {{ task.category }}
+            </span>
 
-                <!-- Fecha si existe -->
-                @if (task.dueDate) {
-                  <span class="meta-date">
-                    <ion-icon name="calendar-outline"></ion-icon>
-                    {{ task.dueDate }}
-                  </span>
-                }
-
-                <!-- Estado de Sincronización con Laravel -->
-                @if (task.sync_status === 'synced') {
-                  <span class="badge sync-badge-synced" title="Sincronizado con Laravel API">
-                    <ion-icon name="cloud-done-outline"></ion-icon>
-                    Sincronizado
-                  </span>
-                } @else if (task.sync_status === 'pending_create') {
-                  <span class="badge sync-badge-pending" title="Guardado en SQLite (Pendiente de subir a Laravel)">
-                    <ion-icon name="cloud-upload-outline"></ion-icon>
-                    SQLite Local
-                  </span>
-                } @else if (task.sync_status === 'pending_update') {
-                  <span class="badge sync-badge-pending" title="Actualizado en SQLite (Pendiente de sincronizar)">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    SQLite Modificado
-                  </span>
-                }
-              </div>
-            </div>
-
-            <!-- Foto de la Tarea -->
-            @if (task.imageUrl) {
-              <div class="task-photo-square" (click)="openEditTaskModal(task)">
-                <img [src]="task.imageUrl" alt="Foto de la tarea" class="square-thumb" loading="lazy" />
-              </div>
+            <!-- Fecha si existe -->
+            @if (task.dueDate) {
+            <span class="meta-date">
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ task.dueDate }}
+            </span>
             }
 
-            <!-- Acciones de la Tarea -->
-            <div class="task-actions">
-              <button type="button" class="action-btn edit" (click)="openEditTaskModal(task, $event)" title="Editar tarea"
-                aria-label="Editar tarea">
-                <ion-icon name="create-outline"></ion-icon>
-              </button>
-              <button type="button" class="action-btn delete" (click)="confirmDeleteTask(task, $event)"
-                title="Eliminar tarea" aria-label="Eliminar tarea">
-                <ion-icon name="trash-outline"></ion-icon>
-              </button>
-            </div>
+            <!-- Estado de Sincronización con Laravel -->
+            @if (task.sync_status === 'synced') {
+            <span class="badge sync-badge-synced" title="Sincronizado con Laravel API">
+              <ion-icon name="cloud-done-outline"></ion-icon>
+              Sincronizado
+            </span>
+            } @else if (task.sync_status === 'pending_create') {
+            <span class="badge sync-badge-pending" title="Guardado en SQLite (Pendiente de subir a Laravel)">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              SQLite Local
+            </span>
+            } @else if (task.sync_status === 'pending_update') {
+            <span class="badge sync-badge-pending" title="Actualizado en SQLite (Pendiente de sincronizar)">
+              <ion-icon name="refresh-outline"></ion-icon>
+              SQLite Modificado
+            </span>
+            }
           </div>
+        </div>
+
+        <!-- Foto de la Tarea -->
+        @if (task.imageUrl) {
+        <div class="task-photo-square" (click)="openEditTaskModal(task)">
+          <img [src]="task.imageUrl" alt="Foto de la tarea" class="square-thumb" loading="lazy" />
+        </div>
         }
+
+        <!-- Acciones de la Tarea -->
+        <div class="task-actions">
+          <button type="button" class="action-btn edit" (click)="openEditTaskModal(task, $event)" title="Editar tarea"
+            aria-label="Editar tarea">
+            <ion-icon name="create-outline"></ion-icon>
+          </button>
+          <button type="button" class="action-btn delete" (click)="confirmDeleteTask(task, $event)"
+            title="Eliminar tarea" aria-label="Eliminar tarea">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
       </div>
+      }
+    </div>
     }
 
   </div>

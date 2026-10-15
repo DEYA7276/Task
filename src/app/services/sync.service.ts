@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { SqliteService } from './sqlite.service';
 import { LaravelApiService } from './laravel-api.service';
 import { NetworkService } from './network.service';
+import { AuthService } from './auth.service';
 import { Task } from '../models/task.model';
 
 export interface SyncResult {
@@ -27,16 +28,23 @@ export class SyncService {
   private hasPendingSyncSubject = new BehaviorSubject<boolean>(false);
   public hasPendingSync$: Observable<boolean> = this.hasPendingSyncSubject.asObservable();
 
+  // Callback para avisar al TaskService cuando termine la sincronización
+  public onSyncComplete?: () => Promise<void>;
+
   constructor(
     private sqliteService: SqliteService,
     private laravelApi: LaravelApiService,
     private networkService: NetworkService,
+    private authService: AuthService,
     private ngZone: NgZone
   ) {
-    // Sincronizar automáticamente en cuanto se restablezca la conexión
-    this.networkService.isOnline$.subscribe((online) => {
-      if (online) {
-        this.sync();
+    // Sincronizar automáticamente en cuanto el servidor Laravel vuelva a estar activo
+    this.networkService.isOnline$.subscribe(async (online) => {
+      if (online && this.authService.isAuthenticated) {
+        await this.sync();
+        if (this.onSyncComplete) {
+          await this.onSyncComplete();
+        }
       }
     });
   }
@@ -46,7 +54,7 @@ export class SyncService {
   }
 
   /**
-   * Ejecuta el ciclo completo de sincronización bidireccional
+   * Ejecuta el ciclo de sincronización bidireccional enfocado en el usuario autenticado
    */
   async sync(): Promise<SyncResult> {
     if (this.isSyncing) {
@@ -54,8 +62,13 @@ export class SyncService {
     }
 
     if (!this.networkService.isOnline) {
-      this.syncErrorSubject.next('Sin conexión a internet. Los datos se guardan en SQLite local.');
-      return { success: false, syncedCount: 0, message: 'Sin conexión a internet' };
+      this.syncErrorSubject.next('Servidor Laravel apagado. Las tareas se guardan en almacenamiento local.');
+      return { success: false, syncedCount: 0, message: 'Servidor Laravel apagado' };
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return { success: false, syncedCount: 0, message: 'No hay usuario autenticado' };
     }
 
     this.isSyncingSubject.next(true);
@@ -64,26 +77,34 @@ export class SyncService {
     let syncedItems = 0;
 
     try {
-      // 1. Obtener todas las operaciones pendientes locales en SQLite
-      const pendingTasks = await this.sqliteService.getPendingTasks();
+      // 1. Si el usuario fue registrado en modo offline, sincronizarlo primero con el backend
+      if (currentUser.is_offline_only) {
+        await this.authService.syncOfflineUserToServer(currentUser);
+      }
 
-      // 2. Enviar cambios pendientes a la API de Laravel
+      const activeUserId = this.authService.currentUser?.id;
+
+      // 2. Obtener todas las operaciones pendientes locales del usuario actual
+      const pendingTasks = await this.sqliteService.getPendingTasks(activeUserId);
+
+      // 3. Enviar cambios pendientes a la API de Laravel
       for (const task of pendingTasks) {
+        if (!this.networkService.isOnline) break; // Si el servidor se apaga en medio, detener
+
         try {
           if (task.sync_status === 'pending_create') {
-            const created = await this.laravelApi.createTask(task);
+            const created = await this.laravelApi.createTask(task, activeUserId);
             if (created && created.id) {
               await this.sqliteService.markAsSynced(task.id, created.id);
               syncedItems++;
             }
           } else if (task.sync_status === 'pending_update') {
             if (task.server_id) {
-              await this.laravelApi.updateTask(task.server_id, task);
+              await this.laravelApi.updateTask(task.server_id, task, activeUserId);
               await this.sqliteService.markAsSynced(task.id, task.server_id);
               syncedItems++;
             } else {
-              // Si aún no tenía server_id, crearlo en Laravel
-              const created = await this.laravelApi.createTask(task);
+              const created = await this.laravelApi.createTask(task, activeUserId);
               if (created && created.id) {
                 await this.sqliteService.markAsSynced(task.id, created.id);
                 syncedItems++;
@@ -91,29 +112,34 @@ export class SyncService {
             }
           } else if (task.sync_status === 'pending_delete') {
             if (task.server_id) {
-              await this.laravelApi.deleteTask(task.server_id);
+              await this.laravelApi.deleteTask(task.server_id, activeUserId);
             }
             await this.sqliteService.deletePermanently(task.id);
             syncedItems++;
           }
         } catch (itemErr: any) {
-          console.warn(`No se pudo sincronizar tarea individual (id: ${task.id}):`, itemErr);
-          // Continúa con las demás tareas
+          console.warn(`No se pudo sincronizar tarea (id: ${task.id}):`, itemErr);
+          if (itemErr?.status === 0 || !itemErr?.status) {
+            // El servidor cayó durante el bucle, salir
+            break;
+          }
         }
       }
 
-      // 3. Descargar tareas actualizadas desde Laravel y fusionar con SQLite local
-      try {
-        const serverTasks = await this.laravelApi.fetchTasks();
-        if (serverTasks && Array.isArray(serverTasks)) {
-          await this.sqliteService.mergeServerTasks(serverTasks);
+      // 4. Descargar tareas actualizadas desde Laravel para el usuario actual y fusionar
+      if (this.networkService.isOnline) {
+        try {
+          const serverTasks = await this.laravelApi.fetchTasks(activeUserId);
+          if (serverTasks && Array.isArray(serverTasks)) {
+            await this.sqliteService.mergeServerTasks(serverTasks, activeUserId);
+          }
+        } catch (fetchErr: any) {
+          console.warn('Error al descargar tareas de Laravel:', fetchErr);
         }
-      } catch (fetchErr: any) {
-        console.warn('No se pudo descargar listado de Laravel (¿servidor no iniciado o error de red?):', fetchErr);
       }
 
-      // 4. Actualizar estado
-      const remainingPending = await this.sqliteService.getPendingTasks();
+      // 5. Actualizar estado
+      const remainingPending = await this.sqliteService.getPendingTasks(activeUserId);
       this.hasPendingSyncSubject.next(remainingPending.length > 0);
       this.lastSyncSubject.next(new Date());
 
@@ -123,7 +149,7 @@ export class SyncService {
         message: 'Sincronizado con éxito con Laravel API'
       };
     } catch (err: any) {
-      console.error('Error general durante la sincronización:', err);
+      console.warn('Error general durante la sincronización:', err);
       const errMsg = err?.message || 'Error de comunicación con Laravel API';
       this.syncErrorSubject.next(errMsg);
       return { success: false, syncedCount: syncedItems, message: errMsg };
@@ -135,7 +161,8 @@ export class SyncService {
   }
 
   async checkPendingCount(): Promise<number> {
-    const list = await this.sqliteService.getPendingTasks();
+    const currentUserId = this.authService.currentUser?.id;
+    const list = await this.sqliteService.getPendingTasks(currentUserId);
     this.hasPendingSyncSubject.next(list.length > 0);
     return list.length;
   }

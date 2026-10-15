@@ -4,6 +4,7 @@ export type SyncStatus = 'synced' | 'pending_create' | 'pending_update' | 'pendi
 
 export interface Task {
   id: string; // Identificador local único
+  user_id?: number | string | null; // ID del usuario dueño de la tarea
   server_id?: number | null; // ID en Laravel API
   title: string;
   description?: string;
@@ -22,4 +23,5 @@ export interface UserProfile {
   name: string;
   email: string;
   token?: string;
+  is_offline_only?: boolean;
 }

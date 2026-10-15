@@ -234,9 +234,9 @@ export class TasksPage implements OnInit, OnDestroy {
       try {
         await this.taskService.addTask(data);
         if (this.isOnline) {
-          await this.showToast('Guardado en SQLite local y sincronizando con Laravel...', 'success');
+          await this.showToast('Tarea guardada y enviada a Laravel', 'success');
         } else {
-          await this.showToast('Guardado en SQLite local (Modo sin conexión)', 'warning');
+          await this.showToast('Tarea guardada en local (Servidor Laravel apagado). Se sincronizará al iniciar el servidor.', 'warning');
         }
       } catch (err: any) {
         await this.showToast(err.message || 'Error al guardar tarea', 'danger');
@@ -261,7 +261,7 @@ export class TasksPage implements OnInit, OnDestroy {
     if (role === 'confirm' && data && task.id) {
       try {
         await this.taskService.updateTask(task.id, data);
-        await this.showToast('Tarea actualizada en SQLite local', 'success');
+        await this.showToast('Tarea actualizada correctamente', 'success');
       } catch (err: any) {
         await this.showToast(err.message || 'Error al actualizar', 'danger');
       }
@@ -287,7 +287,7 @@ export class TasksPage implements OnInit, OnDestroy {
     const alert = await this.alertCtrl.create({
       header: 'Eliminar Tarea',
       subHeader: task.title,
-      message: '¿Estás seguro de que deseas eliminar esta tarea de SQLite y Laravel?',
+      message: '¿Estás seguro de que deseas eliminar esta tarea?',
       buttons: [
         {
           text: 'Cancelar',
@@ -315,19 +315,23 @@ export class TasksPage implements OnInit, OnDestroy {
 
   async manualSync() {
     if (!this.isOnline) {
-      await this.showToast('Sin conexión a internet. Los datos permanecen guardados en SQLite.', 'warning');
-      return;
+      // Re-verificar si el servidor ya fue encendido
+      await this.taskService.syncNow();
+      if (!this.isOnline) {
+        await this.showToast('Servidor Laravel apagado. Las tareas permanecen guardadas en local.', 'warning');
+        return;
+      }
     }
 
     try {
       const res = await this.taskService.syncNow();
       if (res.success) {
-        await this.showToast(`Sincronización exitosa (${res.syncedCount} cambios sincronizados)`, 'success');
+        await this.showToast(`Sincronización exitosa (${res.syncedCount} cambios sincronizados con Laravel)`, 'success');
       } else {
-        await this.showToast(res.message || 'Error sincronizando con Laravel API', 'warning');
+        await this.showToast(res.message || 'Servidor Laravel no disponible', 'warning');
       }
     } catch (err: any) {
-      await this.showToast('No se pudo conectar con el API de Laravel. Verifica que el servidor esté activo.', 'danger');
+      await this.showToast('Servidor Laravel no disponible. Asegúrate de ejecutar "php artisan serve".', 'danger');
     }
   }
 

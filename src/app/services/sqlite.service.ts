@@ -70,6 +70,7 @@ export class SqliteService {
     const query = `
       CREATE TABLE IF NOT EXISTS tasks (
         id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT,
         server_id INTEGER,
         title TEXT NOT NULL,
         description TEXT,
@@ -84,6 +85,13 @@ export class SqliteService {
       );
     `;
     await this.db.execute(query);
+
+    // Migración defensiva en caso de que la tabla ya existiera previamente sin user_id
+    try {
+      await this.db.execute(`ALTER TABLE tasks ADD COLUMN user_id TEXT;`);
+    } catch {
+      // La columna ya existe, ignorar
+    }
   }
 
   // ==========================================
@@ -91,38 +99,50 @@ export class SqliteService {
   // ==========================================
 
   /**
-   * Obtiene todas las tareas visibles (excluye las marcadas para eliminar)
+   * Obtiene todas las tareas visibles para el usuario actual (excluye las pendientes de eliminar)
    */
-  async getTasks(): Promise<Task[]> {
+  async getTasks(userId?: number | string | null): Promise<Task[]> {
     await this.ensureReady();
 
     if (this.isNative && this.db) {
-      const res = await this.db.query(
-        `SELECT * FROM tasks WHERE sync_status != 'pending_delete' ORDER BY createdAt DESC;`
-      );
+      let query = `SELECT * FROM tasks WHERE sync_status != 'pending_delete'`;
+      const params: any[] = [];
+      if (userId != null) {
+        query += ` AND (user_id = ? OR user_id IS NULL)`;
+        params.push(String(userId));
+      }
+      query += ` ORDER BY createdAt DESC;`;
+      const res = await this.db.query(query, params);
       return (res.values || []).map((row: any) => this.rowToTask(row));
     } else {
       const all = await this.idbGetAll();
       return all
         .filter((t) => t.sync_status !== 'pending_delete')
+        .filter((t) => userId == null || t.user_id == null || String(t.user_id) === String(userId))
         .sort((a, b) => b.createdAt - a.createdAt);
     }
   }
 
   /**
-   * Obtiene las tareas pendientes de sincronizar con Laravel
+   * Obtiene las tareas pendientes de sincronizar con Laravel para el usuario actual
    */
-  async getPendingTasks(): Promise<Task[]> {
+  async getPendingTasks(userId?: number | string | null): Promise<Task[]> {
     await this.ensureReady();
 
     if (this.isNative && this.db) {
-      const res = await this.db.query(
-        `SELECT * FROM tasks WHERE sync_status IN ('pending_create', 'pending_update', 'pending_delete');`
-      );
+      let query = `SELECT * FROM tasks WHERE sync_status IN ('pending_create', 'pending_update', 'pending_delete')`;
+      const params: any[] = [];
+      if (userId != null) {
+        query += ` AND (user_id = ? OR user_id IS NULL)`;
+        params.push(String(userId));
+      }
+      const res = await this.db.query(query, params);
       return (res.values || []).map((row: any) => this.rowToTask(row));
     } else {
       const all = await this.idbGetAll();
-      return all.filter((t) => t.sync_status !== 'synced');
+      return all
+        .filter((t) => t.sync_status !== 'synced')
+        .filter((t) => userId == null || t.user_id == null || String(t.user_id) === String(userId));
     }
   }
 
@@ -135,13 +155,14 @@ export class SqliteService {
     if (this.isNative && this.db) {
       const query = `
         INSERT OR REPLACE INTO tasks (
-          id, server_id, title, description, imageUrl,
+          id, user_id, server_id, title, description, imageUrl,
           completed, priority, category, dueDate,
           createdAt, updatedAt, sync_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       `;
       const values = [
         task.id,
+        task.user_id != null ? String(task.user_id) : null,
         task.server_id ?? null,
         task.title,
         task.description ?? '',
@@ -169,6 +190,7 @@ export class SqliteService {
     if (this.isNative && this.db) {
       const query = `
         UPDATE tasks SET
+          user_id = ?,
           server_id = ?,
           title = ?,
           description = ?,
@@ -182,6 +204,7 @@ export class SqliteService {
         WHERE id = ?;
       `;
       const values = [
+        task.user_id != null ? String(task.user_id) : null,
         task.server_id ?? null,
         task.title,
         task.description ?? '',
@@ -272,12 +295,34 @@ export class SqliteService {
   }
 
   /**
-   * Fusión de tareas provenientes de Laravel con SQLite local
+   * Asigna tareas huérfanas (sin user_id) al usuario actual
    */
-  async mergeServerTasks(serverTasks: any[]): Promise<void> {
+  async claimUnassignedTasks(userId: number | string): Promise<void> {
     await this.ensureReady();
 
-    const localTasks = await this.getTasks();
+    if (this.isNative && this.db) {
+      await this.db.run(
+        `UPDATE tasks SET user_id = ? WHERE user_id IS NULL OR user_id = '';`,
+        [String(userId)]
+      );
+    } else {
+      const all = await this.idbGetAll();
+      for (const t of all) {
+        if (t.user_id == null || t.user_id === '') {
+          t.user_id = userId;
+          await this.idbPut(t);
+        }
+      }
+    }
+  }
+
+  /**
+   * Fusión de tareas provenientes de Laravel con SQLite local para el usuario actual
+   */
+  async mergeServerTasks(serverTasks: any[], userId?: number | string | null): Promise<void> {
+    await this.ensureReady();
+
+    const localTasks = await this.getTasks(userId);
     const localByServerId = new Map<number, Task>();
     const localById = new Map<string, Task>();
 
@@ -295,6 +340,9 @@ export class SqliteService {
       if (existing) {
         // Solo sobrescribir si la tarea local está sincronizada sin cambios pendientes
         if (existing.sync_status === 'synced') {
+          if (userId != null) {
+            existing.user_id = userId;
+          }
           existing.title = st.title || existing.title;
           existing.description = st.description ?? '';
           existing.imageUrl = st.imageUrl || st.image_url || '';
@@ -308,6 +356,7 @@ export class SqliteService {
         // Nueva tarea desde el servidor que no tenemos en local
         const newTask: Task = {
           id: 'srv_' + serverId,
+          user_id: userId != null ? userId : (st.user_id ?? null),
           server_id: serverId,
           title: st.title || '',
           description: st.description ?? '',
@@ -332,6 +381,7 @@ export class SqliteService {
   private rowToTask(row: any): Task {
     return {
       id: row.id,
+      user_id: row.user_id ?? null,
       server_id: row.server_id ? Number(row.server_id) : null,
       title: row.title,
       description: row.description || '',
